@@ -1,0 +1,23 @@
+{
+  "name": "link-scanner-extension",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  },
+  "main": "service_worker.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CarreroMarcos/link-scanner-extension.git"
+  },
+  "author": "Marcos Carrero",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/CarreroMarcos/link-scanner-extension/issues"
+  },
+  "homepage": "https://github.com/CarreroMarcos/link-scanner-extension#readme",
+  "description": ""
+}

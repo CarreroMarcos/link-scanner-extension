@@ -1,20 +1,28 @@
-chrome.runtime.onInstalled.addListener(() => {
-    chrome.contextMenus.create({
-        id: "scan-link",
-        title: "Scan Link with VirusTotal",
-        contexts: ["link"],
+if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onInstalled) {
+    chrome.runtime.onInstalled.addListener(() => {
+        if (chrome.contextMenus && chrome.contextMenus.create) {
+            chrome.contextMenus.create({
+                id: "scan-link",
+                title: "Scan Link with VirusTotal",
+                contexts: ["link"],
+            });
+        }
+        console.log("Context menu item 'Scan Link with VirusTotal' created.");
     });
-    console.log("Context menu item 'Scan Link with VirusTotal' created.");
-});
+} 
 
-chrome.contextMenus.onClicked.addListener((info) => {
-    if (info.menuItemId !== "scan-link") return;
+if (typeof chrome !== "undefined" && chrome.contextMenus && chrome.contextMenus.onClicked) {
+    chrome.contextMenus.onClicked.addListener((info) => {
+        if (info.menuItemId !== "scan-link") return;
 
-    const rawUrl = info.linkUrl;
-    const result = scanLinkFailFast(rawUrl);
+        const rawUrl = info.linkUrl;
+        const result = scanLinkFailFast(rawUrl);
 
-    chrome.storage.session.set({ lastScanResult: result });
-});
+        if (chrome.storage && chrome.storage.session && chrome.storage.session.set) {
+            chrome.storage.session.set({ lastScanResult: result });
+        }
+    });
+} 
 
 function scanLinkFailFast(rawUrl) {
     let url;
@@ -69,6 +77,32 @@ function containsPotentialSecret(url) {
         if (/token|code|key|auth|reset/i.test(key)) return true;
     }
     return false;
+}
+
+async function scanWithVirusTotal(url, apiKey) {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 5000);
+
+    const res = await fetch(`https://www.virustotal.com/api/v3/urls`, {
+        method: "POST",
+        headers: {
+            "x-apikey": apiKey,
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: `url=${encodeURIComponent(url)}`,
+        signal: controller.signal,
+    });
+    if (res.status === 429) return gray("RATE_LIMITED");
+    if (!res.ok) return gray("VT_API_ERROR");
+
+    return { status: "green", scanned_url: url };
+}
+
+if (typeof module !== "undefined" && module.exports) {
+    module.exports = {
+        sanitizeUrl,
+        containsPotentialSecret,
+    };
 }
 
 

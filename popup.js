@@ -48,21 +48,3 @@ document.getElementById("saveKey").addEventListener("click", () => {
 
 });
 
-async function scanWithVirusTotal(url, apiKey) {
-    const controller = new AbortController();
-    setTimeout(() => controller.abort(), 5000);
-
-    const res = await fetch(`https://www.virustotal.com/api/v3/urls`, {
-        method: "POST",
-        headers: {
-            "x-apikey": apiKey,
-            "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: `url=${encodeURIComponent(url)}`,
-        signal: controller.signal,
-    });
-    if (res.status === 429) return gray("RATE_LIMITED");
-    if (!res.ok) return gray("VT_API_ERROR");
-
-    return { status: "green", scanned_url: url };
-}
