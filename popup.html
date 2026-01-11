@@ -13,15 +13,65 @@
             .gray {
                 color: gray;
             }
+            .refresh-btn {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                background-color: blue;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                padding: 5px 10px;
+                cursor: pointer;
+            }
+            .status-circle {
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                display: inline-block;
+                margin-right: 10px;
+                vertical-align: middle;
+            }
+            .status {
+                font-weight: bold;
+                font-size: 16px;
+                display: inline;
+            }
+            .valid {
+                background-color: green;
+            }
+            .invalid {
+                background-color: gray;
+            }
+            .danger {
+                background-color: red;
+            }
+            .scanned-url {
+                font-size: 12px;
+                color: #666;
+                margin: 5px 0;
+            }
+            .cleaned-url {
+                font-size: 12px;
+                margin: 5px 0;
+                display: block;
+            }
         </style>
     </head>
     <body>
+        <button class="refresh-btn" id="refreshBtn">Refresh</button>
+        <h2>Link Scanner Extension</h2>
         <div id="apiKeySection">
             <input id="apiKey" placeholder="VirusTotal API Key" />
             <button id="saveKey">Save</button>
         </div>
         <h3>Scan Result</h3>
-        <div id="result">Loading...</div>
+        <div id="result">
+            <p class="status"><div class="status-circle invalid" id="statusCircle"></div><span id="status">Loading...</span></p>
+            <p class="scanned-url" id="scannedUrl"></p>
+            <a class="cleaned-url" id="cleanedUrl" target="_blank"></a>
+            <p class="message" id="message"></p>
+        </div>
         <script src="popup.js"></script>
     </body>
 </html>

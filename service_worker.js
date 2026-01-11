@@ -1,3 +1,20 @@
+// Maps reason codes to user-friendly messages for gray-state responses
+const GRAY_MESSAGES = {
+    INVALID_URL: "This link can't be scanned",
+    UNSUPPORTED_SCHEME: "Only web links can be scanned",
+    RATE_LIMITED: "Try again later",
+    VT_API_ERROR: "An error occurred while scanning the link",
+};
+
+function gray(reason) {
+    return {
+        status: "GRAY",
+        scanned_url: null,
+        reason_code: reason,
+        message: GRAY_MESSAGES[reason] || "An unknown error occurred",
+    };
+}
+
 if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onInstalled) {
     chrome.runtime.onInstalled.addListener(() => {
         if (chrome.contextMenus && chrome.contextMenus.create) {
@@ -19,7 +36,13 @@ if (typeof chrome !== "undefined" && chrome.contextMenus && chrome.contextMenus.
         const result = scanLinkFailFast(rawUrl);
 
         if (chrome.storage && chrome.storage.session && chrome.storage.session.set) {
-            chrome.storage.session.set({ lastScanResult: result });
+            chrome.storage.session.set({ lastScanResult: result }, () => {
+                if (chrome.runtime.lastError) {
+                    console.error("Error saving scan result:", chrome.runtime.lastError);
+                    return;
+                }
+                chrome.action.openPopup();
+            });
         }
     });
 } 
@@ -38,17 +61,14 @@ function scanLinkFailFast(rawUrl) {
         return gray("UNSUPPORTED_SCHEME");
     }
 
+    const message = containsPotentialSecret(url) ? "This link may contain sensitive information. Proceed with caution." : null;
+
     return {
-        status: "green",
+        status: "SAFE",
         scanned_url: url.href,
+        cleaned_url: sanitizeUrl(url).href,
+        message: message,
     };
-    function gray(reason) {
-        return {
-            status: "gray",
-            scanned_url: null,
-            reason_code: reason,
-        };
-    }
 }
 
 const TRACKING_PARAMS = new Set([
@@ -79,6 +99,10 @@ function containsPotentialSecret(url) {
     return false;
 }
 
+function isValidScanResponse(obj) {
+    return obj && typeof obj.status === "string";
+}
+
 async function scanWithVirusTotal(url, apiKey) {
     const controller = new AbortController();
     setTimeout(() => controller.abort(), 5000);
@@ -104,5 +128,3 @@ if (typeof module !== "undefined" && module.exports) {
         containsPotentialSecret,
     };
 }
-
-
