@@ -1,77 +1,42 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="utf-8" />
-        <style>
-            body {
-                font-family: sans-serif;
-                padding: 10px;
-            }
-            .green {
-                color: green;
-            }
-            .gray {
-                color: gray;
-            }
-            .refresh-btn {
-                position: absolute;
-                top: 10px;
-                right: 10px;
-                background-color: blue;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                padding: 5px 10px;
-                cursor: pointer;
-            }
-            .status-circle {
-                width: 20px;
-                height: 20px;
-                border-radius: 50%;
-                display: inline-block;
-                margin-right: 10px;
-                vertical-align: middle;
-            }
-            .status {
-                font-weight: bold;
-                font-size: 16px;
-                display: inline;
-            }
-            .valid {
-                background-color: green;
-            }
-            .invalid {
-                background-color: gray;
-            }
-            .danger {
-                background-color: red;
-            }
-            .scanned-url {
-                font-size: 12px;
-                color: #666;
-                margin: 5px 0;
-            }
-            .cleaned-url {
-                font-size: 12px;
-                margin: 5px 0;
-                display: block;
-            }
-        </style>
-    </head>
-    <body>
-        <button class="refresh-btn" id="refreshBtn">Refresh</button>
-        <h2>Link Scanner Extension</h2>
-        <div id="apiKeySection">
-            <input id="apiKey" placeholder="VirusTotal API Key" />
-            <button id="saveKey">Save</button>
-        </div>
-        <h3>Scan Result</h3>
-        <div id="result">
-            <p class="status"><div class="status-circle invalid" id="statusCircle"></div><span id="status">Loading...</span></p>
-            <p class="scanned-url" id="scannedUrl"></p>
-            <a class="cleaned-url" id="cleanedUrl" target="_blank"></a>
-            <p class="message" id="message"></p>
-        </div>
-        <script src="popup.js"></script>
-    </body>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <button
+      class="refresh-btn"
+      id="refreshBtn"
+      title="Refresh current scan results"
+    >
+      Refresh
+    </button>
+    <h2>Link Scanner</h2>
+    <div id="apiKeySection">
+      <label for="apiKey">VirusTotal API Key:</label>
+      <input id="apiKey" placeholder="Enter your 64-character API key" />
+      <button id="saveKey">Save</button>
+    </div>
+    <div id="result">
+      <div class="status">
+        <div class="status-circle invalid" id="statusCircle"></div>
+        <span id="status">No scan performed</span>
+      </div>
+      <p class="scanned-url" id="scannedUrl"></p>
+      <a class="cleaned-url" id="cleanedUrl" target="_blank"></a>
+      <div id="detectionSummary"></div>
+      <div id="analysisTime"></div>
+      <a id="vtLink" target="_blank" rel="noopener noreferrer"></a>
+      <div id="caution"></div>
+      <p class="message" id="message">
+        Right-click on any link and select "Scan Link with VirusTotal" to check
+        if it's safe.
+      </p>
+    </div>
+    <div class="footer">
+      <small>Right-click any link → "Scan Link with VirusTotal"</small>
+    </div>
+    <script src="popup.js"></script>
+  </body>
 </html>

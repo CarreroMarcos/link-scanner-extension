@@ -6,7 +6,8 @@
     "test": "jest"
   },
   "devDependencies": {
-    "jest": "^29.0.0"
+    "jest": "^29.0.0",
+    "jest-environment-jsdom": "^30.2.0"
   },
   "main": "service_worker.js",
   "repository": {

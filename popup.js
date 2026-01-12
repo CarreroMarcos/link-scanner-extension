@@ -1,4 +1,4 @@
-chrome.storage.local.get("vtApiKey", (data) => {
+chrome.storage.local.get(["vtApiKey"], (data) => {
     if (data.vtApiKey) {
         document.getElementById("apiKeySection").style.display = "none";
     }
@@ -17,7 +17,7 @@ document.getElementById("saveKey").addEventListener("click", () => {
     }
 
     if (!isValidVirusTotalApiKey(key)) {
-        alert("Invalid API Key format.");
+        alert("Invalid API Key format. Please enter a valid 64-character VirusTotal API key.");
         return;
     }
 
@@ -40,7 +40,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const scannedUrlElement = document.getElementById("scannedUrl");
     const cleanedUrlElement = document.getElementById("cleanedUrl");
 
-    // Add null checks
     if (!statusElement || !messageElement || !refreshBtn || !statusCircle || !scannedUrlElement || !cleanedUrlElement) {
         console.error("Required elements not found in the DOM.");
         return;
@@ -59,21 +58,104 @@ document.addEventListener("DOMContentLoaded", () => {
             if (result) {
                 let displayStatus = result.status.toUpperCase();
                 if (displayStatus === "GRAY") displayStatus = "UNVERIFIABLE";
+                if (displayStatus === "SCANNING") displayStatus = "SCANNING...";
                 if (statusElement) statusElement.textContent = displayStatus;
-                if (scannedUrlElement) scannedUrlElement.textContent = result.scanned_url ? `Scanned URL: ${result.scanned_url}` : "";
-                if (cleanedUrlElement) {
-                    cleanedUrlElement.href = result.cleaned_url || "";
-                    cleanedUrlElement.textContent = result.cleaned_url ? `Cleaned URL: ${result.cleaned_url}` : "";
+                
+                const scanned = result.scanned_url || "";
+                const cleaned = result.cleaned_url || "";
+
+                if (cleaned && scanned && cleaned === scanned) {
+                    if (scannedUrlElement) scannedUrlElement.textContent = "";
+                    if (cleanedUrlElement) {
+                        cleanedUrlElement.href = cleaned;
+                        cleanedUrlElement.textContent = cleaned;
+                        cleanedUrlElement.title = cleaned;
+                    }
+                } else {
+                    if (scannedUrlElement) scannedUrlElement.textContent = scanned ? `Original: ${scanned}` : "";
+                    if (cleanedUrlElement) {
+                        cleanedUrlElement.href = cleaned || "";
+                        cleanedUrlElement.textContent = cleaned ? cleaned : "";
+                        cleanedUrlElement.title = cleaned || "";
+                    }
                 }
+
+                const detectionEl = document.getElementById('detectionSummary');
+                const timeEl = document.getElementById('analysisTime');
+                const vtLinkEl = document.getElementById('vtLink');
+                const cautionEl = document.getElementById('caution');
+
+                const engineCount = result.engine_count || (result.stats ? Object.values(result.stats).reduce((a,b)=>a+(b||0),0) : 0);
+                const stats = result.stats || {};
+                const positive = (stats.malicious || 0) + (stats.suspicious || 0);
+
+                if (result.status && result.status.toUpperCase() === 'SCANNING') {
+                    if (detectionEl) detectionEl.textContent = 'Scanning — results will appear shortly';
+                    if (timeEl) timeEl.textContent = '';
+                    if (vtLinkEl) { vtLinkEl.href = ''; vtLinkEl.textContent = ''; }
+                    if (cautionEl) cautionEl.textContent = '';
+                } else {
+                    if (detectionEl) {
+                        if (engineCount === 0) {
+                            detectionEl.textContent = 'No engines scanned yet';
+                        } else if (positive > 0) {
+                            detectionEl.textContent = `${positive} detections — ${engineCount} engines scanned`;
+                        } else {
+                            detectionEl.textContent = `No detections — ${engineCount} engines scanned`;
+                        }
+                    }
+                }
+
+                if (timeEl) {
+                    if (result.analysis_time) {
+                        try {
+                            const dt = new Date(result.analysis_time);
+                            timeEl.textContent = `Last analysis: ${dt.toLocaleString()}`;
+                        } catch { timeEl.textContent = '' }
+                    } else {
+                        timeEl.textContent = '';
+                    }
+                }
+
+                if (vtLinkEl) {
+                    if (result.vt_report_url) {
+                        vtLinkEl.href = result.vt_report_url;
+                        vtLinkEl.textContent = 'View on VirusTotal';
+                    } else {
+                        vtLinkEl.href = '';
+                        vtLinkEl.textContent = '';
+                    }
+                }
+
+                if (cautionEl) {
+                    if (engineCount === 0) {
+                        cautionEl.textContent = 'UNVERIFIABLE — no engines have scanned this resource yet.';
+                    } else if (positive === 0 && engineCount < 10) {
+                        cautionEl.textContent = 'No detections, but only a small number of engines scanned — results may be incomplete.';
+                    } else if (positive === 0) {
+                        cautionEl.textContent = 'No vendors flagged this resource — not guaranteed safe.';
+                    } else {
+                        cautionEl.textContent = '';
+                    }
+                }
+
                 if (messageElement) messageElement.textContent = result.message || "No message available.";
+
+                if (engineCount === 0 && statusElement && (!result.status || result.status.toUpperCase() !== 'SCANNING')) {
+                    statusElement.textContent = "UNVERIFIABLE";
+                }
                 if (statusCircle) {
                     const status = result.status.toUpperCase();
+                    statusCircle.className = "status-circle";
+                    
                     if (status === "SAFE") {
-                        statusCircle.className = "status-circle valid";
+                        statusCircle.classList.add("valid");
                     } else if (status === "MALICIOUS") {
-                        statusCircle.className = "status-circle danger";
+                        statusCircle.classList.add("danger");
+                    } else if (status === "SCANNING") {
+                        statusCircle.classList.add("scanning", "invalid");
                     } else {
-                        statusCircle.className = "status-circle invalid";
+                        statusCircle.classList.add("invalid");
                     }
                 }
             } else {
@@ -83,7 +165,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     cleanedUrlElement.href = "";
                     cleanedUrlElement.textContent = "";
                 }
-                if (messageElement) messageElement.textContent = "Right-click on a link and select 'Scan Link with VirusTotal' to scan it.";
+                if (messageElement) messageElement.textContent = "Right-click on any link and select 'Scan Link with VirusTotal' to check if it's safe.";
                 if (statusCircle) statusCircle.className = "status-circle invalid";
             }
         });
@@ -91,8 +173,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     loadScanResult();
 
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+        if (namespace === "session" && changes.lastScanResult) {
+            loadScanResult();
+        }
+    });
+
     refreshBtn.addEventListener("click", () => {
         loadScanResult();
     });
 });
-
